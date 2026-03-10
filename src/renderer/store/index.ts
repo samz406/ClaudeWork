@@ -6,6 +6,8 @@ import mcpReducer from './slices/mcpSlice';
 import imReducer from './slices/imSlice';
 import quickActionReducer from './slices/quickActionSlice';
 import scheduledTaskReducer from './slices/scheduledTaskSlice';
+import workspaceReducer from './slices/workspaceSlice';
+import fileExplorerReducer from './slices/fileExplorerSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +18,8 @@ export const store = configureStore({
     im: imReducer,
     quickAction: quickActionReducer,
     scheduledTask: scheduledTaskReducer,
+    workspace: workspaceReducer,
+    fileExplorer: fileExplorerReducer,
   },
 });
 

@@ -2164,6 +2164,66 @@ if (!gotTheLock) {
     }
   });
 
+  // File system operations for File Explorer
+  const EXCLUDED_DOTFILES = new Set(['.DS_Store', '.Spotlight-V100', '.Trashes', 'Thumbs.db']);
+  const MAX_PREVIEW_FILE_BYTES = 1024 * 1024; // 1MB
+
+  ipcMain.handle('fs:readDir', async (_event, dirPath: string) => {
+    try {
+      const resolvedPath = path.resolve(dirPath);
+      const entries = await fs.promises.readdir(resolvedPath, { withFileTypes: true });
+      const result = entries
+        .filter(entry => !EXCLUDED_DOTFILES.has(entry.name) && !entry.name.startsWith('.'))
+        .sort((a, b) => {
+          // Directories first, then files
+          if (a.isDirectory() && !b.isDirectory()) return -1;
+          if (!a.isDirectory() && b.isDirectory()) return 1;
+          return a.name.localeCompare(b.name);
+        })
+        .map(entry => ({
+          name: entry.name,
+          path: path.join(resolvedPath, entry.name),
+          isDirectory: entry.isDirectory(),
+        }));
+      return { success: true, entries: result };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to read directory' };
+    }
+  });
+
+  ipcMain.handle('fs:readFile', async (_event, filePath: string) => {
+    try {
+      const resolvedPath = path.resolve(filePath);
+      const stats = await fs.promises.stat(resolvedPath);
+      if (stats.size > MAX_PREVIEW_FILE_BYTES) {
+        return { success: false, error: 'File too large for preview (>1MB)' };
+      }
+      const content = await fs.promises.readFile(resolvedPath, 'utf-8');
+      return { success: true, content, size: stats.size };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to read file' };
+    }
+  });
+
+  ipcMain.handle('fs:stat', async (_event, filePath: string) => {
+    try {
+      const resolvedPath = path.resolve(filePath);
+      const stats = await fs.promises.stat(resolvedPath);
+      return {
+        success: true,
+        stats: {
+          size: stats.size,
+          isDirectory: stats.isDirectory(),
+          isFile: stats.isFile(),
+          modifiedAt: stats.mtimeMs,
+          createdAt: stats.birthtimeMs,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to stat file' };
+    }
+  });
+
   // App update download & install
   ipcMain.handle('appUpdate:download', async (event, url: string) => {
     try {

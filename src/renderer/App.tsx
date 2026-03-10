@@ -11,6 +11,9 @@ import { ScheduledTasksView } from './components/scheduledTasks';
 import { McpView } from './components/mcp';
 import CoworkPermissionModal from './components/cowork/CoworkPermissionModal';
 import CoworkQuestionWizard from './components/cowork/CoworkQuestionWizard';
+import WelcomePage from './components/workspace/WelcomePage';
+import FileExplorer from './components/explorer/FileExplorer';
+import FileViewer from './components/editor/FileViewer';
 import { configService } from './services/config';
 import { apiService } from './services/api';
 import { themeService } from './services/theme';
@@ -20,6 +23,8 @@ import { checkForAppUpdate, type AppUpdateInfo, type AppUpdateDownloadProgress, 
 import { defaultConfig } from './config';
 import { setAvailableModels, setSelectedModel } from './store/slices/modelSlice';
 import { clearSelection } from './store/slices/quickActionSlice';
+import { setShowWelcome, setRecentWorkspaces, addRecentWorkspace } from './store/slices/workspaceSlice';
+import { setRootPath } from './store/slices/fileExplorerSlice';
 import type { ApiConfig } from './services/api';
 import type { CoworkPermissionResult } from './types/cowork';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
@@ -48,6 +53,10 @@ const App: React.FC = () => {
   const selectedModel = useSelector((state: RootState) => state.model.selectedModel);
   const currentSessionId = useSelector((state: RootState) => state.cowork.currentSessionId);
   const pendingPermissions = useSelector((state: RootState) => state.cowork.pendingPermissions);
+  const showWelcome = useSelector((state: RootState) => state.workspace.showWelcome);
+  const workingDirectory = useSelector((state: RootState) => state.cowork.config.workingDirectory);
+  const [isFileExplorerVisible, setIsFileExplorerVisible] = useState(true);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const pendingPermission = pendingPermissions[0] ?? null;
   const isWindows = window.electron.platform === 'win32';
 
@@ -127,6 +136,36 @@ const App: React.FC = () => {
     initializeApp();
   }, []);
 
+  // Load recent workspaces and determine welcome page visibility
+  useEffect(() => {
+    if (!isInitialized) return;
+    const loadRecent = async () => {
+      try {
+        const recentCwds = await window.electron.getRecentCwds(10);
+        if (recentCwds && recentCwds.length > 0) {
+          const workspaces = recentCwds.map((cwd: string) => ({
+            path: cwd,
+            name: cwd.split(/[/\\]/).pop() || cwd,
+            lastOpenedAt: Date.now(),
+          }));
+          dispatch(setRecentWorkspaces(workspaces));
+        }
+      } catch (error) {
+        console.error('Failed to load recent workspaces:', error);
+      }
+    };
+    loadRecent();
+  }, [isInitialized, dispatch]);
+
+  // Sync welcome page visibility with workingDirectory
+  useEffect(() => {
+    if (!isInitialized) return;
+    dispatch(setShowWelcome(!workingDirectory));
+    if (workingDirectory) {
+      dispatch(setRootPath(workingDirectory));
+    }
+  }, [isInitialized, workingDirectory, dispatch]);
+
   useEffect(() => {
     const unsubscribe = i18nService.subscribe(() => {
       forceLanguageRefresh((prev) => prev + 1);
@@ -197,6 +236,30 @@ const App: React.FC = () => {
 
   const handleShowMcp = useCallback(() => {
     setMainView('mcp');
+  }, []);
+
+  const handleWorkspaceSelected = useCallback(async (dirPath: string) => {
+    await coworkService.updateConfig({ workingDirectory: dirPath });
+    dispatch(setShowWelcome(false));
+    dispatch(setRootPath(dirPath));
+    dispatch(addRecentWorkspace({
+      path: dirPath,
+      name: dirPath.split(/[/\\]/).pop() || dirPath,
+      lastOpenedAt: Date.now(),
+    }));
+    setMainView('cowork');
+  }, [dispatch]);
+
+  const handleToggleFileExplorer = useCallback(() => {
+    setIsFileExplorerVisible(prev => !prev);
+  }, []);
+
+  const handleFileSelect = useCallback((filePath: string) => {
+    setSelectedFilePath(filePath);
+  }, []);
+
+  const handleCloseFileViewer = useCallback(() => {
+    setSelectedFilePath(null);
   }, []);
 
   const handleToggleSidebar = useCallback(() => {
@@ -601,7 +664,9 @@ const App: React.FC = () => {
         />
         <div className={`flex-1 min-w-0 py-1.5 pr-1.5 ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
           <div className="h-full min-h-0 rounded-xl dark:bg-claude-darkBg bg-claude-bg overflow-hidden">
-            {mainView === 'skills' ? (
+            {showWelcome && mainView === 'cowork' ? (
+              <WelcomePage onWorkspaceSelected={handleWorkspaceSelected} />
+            ) : mainView === 'skills' ? (
               <SkillsView
                 isSidebarCollapsed={isSidebarCollapsed}
                 onToggleSidebar={handleToggleSidebar}
@@ -623,14 +688,35 @@ const App: React.FC = () => {
                 updateBadge={isSidebarCollapsed ? updateBadge : null}
               />
             ) : (
-              <CoworkView
-                onRequestAppSettings={handleShowSettings}
-                onShowSkills={handleShowSkills}
-                isSidebarCollapsed={isSidebarCollapsed}
-                onToggleSidebar={handleToggleSidebar}
-                onNewChat={handleNewChat}
-                updateBadge={isSidebarCollapsed ? updateBadge : null}
-              />
+              <div className="flex h-full">
+                {/* File Explorer Panel */}
+                {isFileExplorerVisible && workingDirectory && (
+                  <div className="w-56 shrink-0 border-r dark:border-claude-darkBorder border-claude-border overflow-hidden">
+                    <FileExplorer rootPath={workingDirectory} onFileSelect={handleFileSelect} />
+                  </div>
+                )}
+
+                {/* Main Cowork Area */}
+                <div className="flex-1 min-w-0">
+                  <CoworkView
+                    onRequestAppSettings={handleShowSettings}
+                    onShowSkills={handleShowSkills}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    onToggleSidebar={handleToggleSidebar}
+                    onNewChat={handleNewChat}
+                    updateBadge={isSidebarCollapsed ? updateBadge : null}
+                    onToggleFileExplorer={handleToggleFileExplorer}
+                    isFileExplorerVisible={isFileExplorerVisible}
+                  />
+                </div>
+
+                {/* File Viewer Panel */}
+                {selectedFilePath && (
+                  <div className="w-80 shrink-0 border-l dark:border-claude-darkBorder border-claude-border overflow-hidden">
+                    <FileViewer filePath={selectedFilePath} onClose={handleCloseFileViewer} />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
