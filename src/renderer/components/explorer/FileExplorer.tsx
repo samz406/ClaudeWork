@@ -32,7 +32,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ rootPath, onFileSelect }) =
       name: entry.name,
       path: entry.path,
       isDirectory: entry.isDirectory,
-      children: entry.isDirectory ? undefined : undefined,
       isExpanded: false,
       isLoading: false,
     }));

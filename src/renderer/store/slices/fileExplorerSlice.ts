@@ -13,7 +13,6 @@ interface FileExplorerState {
   rootPath: string;
   tree: FileTreeNode[];
   selectedFilePath: string | null;
-  expandedPaths: Set<string>;
   searchQuery: string;
   isVisible: boolean;
 }
@@ -22,7 +21,6 @@ const initialState: FileExplorerState = {
   rootPath: '',
   tree: [],
   selectedFilePath: null,
-  expandedPaths: new Set<string>() as any, // Redux Toolkit uses Immer, Set handled via array
   searchQuery: '',
   isVisible: true,
 };

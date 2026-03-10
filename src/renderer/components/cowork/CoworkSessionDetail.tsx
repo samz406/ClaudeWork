@@ -657,7 +657,7 @@ const ToolCallGroup: React.FC<{
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-start gap-2.5 text-left group relative z-10 p-1.5 -ml-1.5 rounded-lg hover:bg-claude-surfaceHover/50 dark:hover:bg-claude-darkSurfaceHover/50 transition-colors"
       >
-        <span className={`mt-0.5 text-sm flex-shrink-0 leading-none`}>
+        <span className={`mt-0.5 text-sm flex-shrink-0 leading-none`} role="img" aria-label={getToolLabel()}>
           {getToolIcon()}
         </span>
         <div className="flex-1 min-w-0">
