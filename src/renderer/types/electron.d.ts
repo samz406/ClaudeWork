@@ -352,6 +352,11 @@ interface IElectronAPI {
     showItemInFolder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
     openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
   };
+  fs: {
+    readDir: (dirPath: string) => Promise<{ success: boolean; entries?: Array<{ name: string; path: string; isDirectory: boolean }>; error?: string }>;
+    readFile: (filePath: string) => Promise<{ success: boolean; content?: string; size?: number; error?: string }>;
+    stat: (filePath: string) => Promise<{ success: boolean; stats?: { size: number; isDirectory: boolean; isFile: boolean; modifiedAt: number; createdAt: number }; error?: string }>;
+  };
   autoLaunch: {
     get: () => Promise<{ enabled: boolean }>;
     set: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;

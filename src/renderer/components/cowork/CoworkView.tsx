@@ -10,10 +10,13 @@ import { quickActionService } from '../../services/quickAction';
 import { i18nService } from '../../services/i18n';
 import CoworkPromptInput, { type CoworkPromptInputRef } from './CoworkPromptInput';
 import CoworkSessionDetail from './CoworkSessionDetail';
+import TaskTemplates from '../templates/TaskTemplates';
+import WorkspaceHeader from '../workspace/WorkspaceHeader';
 import ModelSelector from '../ModelSelector';
 import SidebarToggleIcon from '../icons/SidebarToggleIcon';
 import ComposeIcon from '../icons/ComposeIcon';
 import WindowTitleBar from '../window/WindowTitleBar';
+import { FolderIcon } from '@heroicons/react/24/outline';
 import { QuickActionBar, PromptPanel } from '../quick-actions';
 import type { SettingsOpenOptions } from '../Settings';
 import type { CoworkSession, CoworkImageAttachment } from '../../types/cowork';
@@ -25,9 +28,11 @@ export interface CoworkViewProps {
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
+  onToggleFileExplorer?: () => void;
+  isFileExplorerVisible?: boolean;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, onToggleFileExplorer, isFileExplorerVisible }) => {
   const dispatch = useDispatch();
   const isMac = window.electron.platform === 'darwin';
   const [isInitialized, setIsInitialized] = useState(false);
@@ -374,6 +379,33 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
               {updateBadge}
             </div>
           )}
+          {/* File Explorer Toggle */}
+          {onToggleFileExplorer && config.workingDirectory && (
+            <button
+              type="button"
+              onClick={onToggleFileExplorer}
+              className={`non-draggable h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors mr-1 ${
+                isFileExplorerVisible
+                  ? 'text-claude-accent bg-claude-accent/10'
+                  : 'dark:text-claude-darkTextSecondary text-claude-textSecondary hover:bg-claude-surfaceHover dark:hover:bg-claude-darkSurfaceHover'
+              }`}
+              title={i18nService.t('explorerTitle')}
+            >
+              <FolderIcon className="h-4 w-4" />
+            </button>
+          )}
+          {/* Workspace Header */}
+          {config.workingDirectory && (
+            <WorkspaceHeader
+              workingDirectory={config.workingDirectory}
+              onChangeWorkspace={async () => {
+                const result = await window.electron.dialog.selectDirectory();
+                if (result.success && result.path) {
+                  await coworkService.updateConfig({ workingDirectory: result.path });
+                }
+              }}
+            />
+          )}
           <ModelSelector />
         </div>
         <WindowTitleBar inline />
@@ -412,6 +444,14 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
               />
             </div>
           </div>
+
+          {/* Task Templates */}
+          <TaskTemplates
+            onSelectTemplate={(prompt) => {
+              promptInputRef.current?.setValue(prompt);
+              promptInputRef.current?.focus();
+            }}
+          />
 
           {/* Quick Actions */}
           <div className="space-y-4">

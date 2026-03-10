@@ -369,6 +369,50 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkDescription: '7×24 小时帮你干活的全场景个人助理 Agent',
     coworkNewSession: '新会话',
     coworkContinuePlaceholder: '继续对话...',
+
+    // Workspace & Welcome
+    welcomeTitle: 'Claude Code',
+    welcomeSubtitle: '打开项目 → 描述需求 → 审批执行 → 查看结果',
+    welcomeOpenFolder: '打开文件夹',
+    welcomeRecentProjects: '最近的项目',
+    workspaceCurrentProject: '当前项目',
+
+    // File Explorer
+    explorerTitle: '资源管理器',
+    explorerSearch: '搜索文件...',
+    explorerNoResults: '未找到匹配的文件',
+    explorerEmpty: '空目录',
+
+    // File Viewer
+    fileViewerReadOnly: '只读',
+
+    // Task Templates
+    templateFixBug: '🐛 修复 Bug',
+    templateAddFeature: '✨ 添加功能',
+    templateCodeReview: '🔍 Code Review',
+    templateWriteTests: '📝 写测试',
+    templateRefactor: '🔄 重构代码',
+    templateFixBugPrompt: '帮我修复以下 Bug：',
+    templateAddFeaturePrompt: '帮我添加以下新功能：',
+    templateCodeReviewPrompt: '帮我 Code Review 当前项目的代码',
+    templateWriteTestsPrompt: '帮我为当前项目编写测试用例',
+    templateRefactorPrompt: '帮我重构以下模块：',
+
+    // Time
+    timeJustNow: '刚刚',
+    timeMinutesAgo: '分钟前',
+    timeHoursAgo: '小时前',
+    timeDaysAgo: '天前',
+
+    // Tool Call Cards
+    toolCallRunCommand: '运行命令',
+    toolCallReadFile: '读取文件',
+    toolCallWriteFile: '修改文件',
+    toolCallSearch: '搜索',
+    toolCallNetworkRequest: '网络请求',
+    toolCallApprove: '审批',
+    toolCallViewOutput: '查看输出',
+    toolCallViewDiff: '查看 Diff',
     updateAvailablePill: '有新版本',
     updateAvailableTitle: '检测到新版本',
     updateAvailableMessage: '检测到新版本，请前往官网下载并覆盖安装。',
@@ -1145,6 +1189,50 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkDescription: 'A 24/7 personal assistant agent that gets work done for you',
     coworkNewSession: 'New Session',
     coworkContinuePlaceholder: 'Continue the conversation...',
+
+    // Workspace & Welcome
+    welcomeTitle: 'Claude Code',
+    welcomeSubtitle: 'Open project → Describe requirements → Approve execution → View results',
+    welcomeOpenFolder: 'Open Folder',
+    welcomeRecentProjects: 'Recent Projects',
+    workspaceCurrentProject: 'Current Project',
+
+    // File Explorer
+    explorerTitle: 'Explorer',
+    explorerSearch: 'Search files...',
+    explorerNoResults: 'No matching files found',
+    explorerEmpty: 'Empty directory',
+
+    // File Viewer
+    fileViewerReadOnly: 'Read-only',
+
+    // Task Templates
+    templateFixBug: '🐛 Fix Bug',
+    templateAddFeature: '✨ Add Feature',
+    templateCodeReview: '🔍 Code Review',
+    templateWriteTests: '📝 Write Tests',
+    templateRefactor: '🔄 Refactor',
+    templateFixBugPrompt: 'Help me fix the following bug: ',
+    templateAddFeaturePrompt: 'Help me add the following new feature: ',
+    templateCodeReviewPrompt: 'Help me code review the current project',
+    templateWriteTestsPrompt: 'Help me write test cases for the current project',
+    templateRefactorPrompt: 'Help me refactor the following module: ',
+
+    // Time
+    timeJustNow: 'Just now',
+    timeMinutesAgo: 'min ago',
+    timeHoursAgo: 'hours ago',
+    timeDaysAgo: 'days ago',
+
+    // Tool Call Cards
+    toolCallRunCommand: 'Run Command',
+    toolCallReadFile: 'Read File',
+    toolCallWriteFile: 'Edit File',
+    toolCallSearch: 'Search',
+    toolCallNetworkRequest: 'Network Request',
+    toolCallApprove: 'Approve',
+    toolCallViewOutput: 'View Output',
+    toolCallViewDiff: 'View Diff',
     updateAvailablePill: 'New update',
     updateAvailableTitle: 'New version available',
     updateAvailableMessage: 'A new version is available. Please download it from the official website and install over the current version.',
