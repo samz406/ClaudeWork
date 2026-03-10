@@ -622,6 +622,31 @@ const ToolCallGroup: React.FC<{
   // Check if this is a Bash-like tool that should show terminal style
   const isBashTool = toolName === 'Bash';
 
+  // Determine tool icon and label for card display
+  const isReadTool = /read|view|cat/i.test(toolName);
+  const isWriteTool = /write|edit|create|patch|replace/i.test(toolName);
+  const isSearchTool = /search|grep|find|glob|list/i.test(toolName);
+  const isNetworkTool = /http|fetch|request|curl|web/i.test(toolName);
+
+  const getToolIcon = () => {
+    if (isBashTool) return '🔧';
+    if (isReadTool) return '📄';
+    if (isWriteTool) return '✏️';
+    if (isSearchTool) return '🔍';
+    if (isNetworkTool) return '🌐';
+    if (isTodoWriteTool) return '📋';
+    return '⚡';
+  };
+
+  const getToolLabel = () => {
+    if (isBashTool) return i18nService.t('toolCallRunCommand');
+    if (isReadTool) return i18nService.t('toolCallReadFile');
+    if (isWriteTool) return i18nService.t('toolCallWriteFile');
+    if (isSearchTool) return i18nService.t('toolCallSearch');
+    if (isNetworkTool) return i18nService.t('toolCallNetworkRequest');
+    return toolName;
+  };
+
   return (
     <div className="relative py-1">
       {/* Vertical connecting line to next tool group */}
@@ -630,25 +655,29 @@ const ToolCallGroup: React.FC<{
       )}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-start gap-2 text-left group relative z-10"
+        className="w-full flex items-start gap-2.5 text-left group relative z-10 p-1.5 -ml-1.5 rounded-lg hover:bg-claude-surfaceHover/50 dark:hover:bg-claude-darkSurfaceHover/50 transition-colors"
       >
-        <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
-          !toolResult
-            ? 'bg-blue-500 animate-pulse'
-            : isToolError
-              ? 'bg-red-500'
-              : 'bg-green-500'
-        }`} />
+        <span className={`mt-0.5 text-sm flex-shrink-0 leading-none`}>
+          {getToolIcon()}
+        </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary">
-              {toolName}
+            <span className="text-sm font-semibold dark:text-claude-darkText text-claude-text">
+              {getToolLabel()}
             </span>
             {toolInputSummary && (
-              <code className="text-xs dark:text-claude-darkTextSecondary/80 text-claude-textSecondary/80 font-mono truncate max-w-[400px]">
+              <code className="text-xs px-1.5 py-0.5 rounded dark:bg-claude-darkSurface bg-claude-surface dark:text-claude-darkTextSecondary/80 text-claude-textSecondary/80 font-mono truncate max-w-[400px]">
                 {toolInputSummary}
               </code>
             )}
+            {/* Status indicator */}
+            <span className={`ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full ${
+              !toolResult
+                ? 'bg-blue-500 animate-pulse'
+                : isToolError
+                  ? 'bg-red-500'
+                  : 'bg-green-500'
+            }`} />
           </div>
           {toolResult && resultLineCount > 0 && !isTodoWriteTool && (
             <div className="text-xs dark:text-claude-darkTextSecondary/60 text-claude-textSecondary/60 mt-0.5">
