@@ -34,8 +34,10 @@ import {
 } from './libs/systemProxy';
 
 // 设置应用程序名称
-app.name = APP_NAME;
-app.setName(APP_NAME);
+if (app) {
+  app.name = APP_NAME;
+  app.setName(APP_NAME);
+}
 
 const INVALID_FILE_NAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/g;
 const MIN_MEMORY_USER_MEMORIES_MAX_ITEMS = 1;
@@ -94,7 +96,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, '.cowork-temp', 'attachments', 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'lobsterai', 'attachments');
+  return path.join(app.getPath('temp'), 'clawork', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -111,7 +113,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `lobsterai-logs-${datePart}-${timePart}.zip`;
+  return `clawork-logs-${datePart}-${timePart}.zip`;
 };
 
 const truncateIpcString = (value: string, maxChars: number): string => {
@@ -273,6 +275,11 @@ const savePngWithDialog = async (
 };
 
 const configureUserDataPath = (): void => {
+  if (!app) {
+    console.log('[Main] app not available yet, skipping configureUserDataPath');
+    return;
+  }
+
   const appDataPath = app.getPath('appData');
   const preferredUserDataPath = path.join(appDataPath, APP_NAME);
   const currentUserDataPath = app.getPath('userData');
@@ -283,7 +290,7 @@ const configureUserDataPath = (): void => {
   }
 };
 
-configureUserDataPath();
+// configureUserDataPath will be called after app.whenReady()
 initLogger();
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -295,8 +302,8 @@ const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' ||
   process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.LOBSTERAI_DISABLE_GPU === '1' ||
-  process.env.LOBSTERAI_DISABLE_GPU === 'true' ||
+  process.env.CLAUDEWORK_DISABLE_GPU === '1' ||
+  process.env.CLAUDEWORK_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -446,25 +453,27 @@ if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
 }
-if (disableGpu) {
+if (app && disableGpu) {
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-software-rasterizer');
   // 禁用硬件加速
   app.disableHardwareAcceleration();
 }
-if (enableVerboseLogging) {
+if (app && enableVerboseLogging) {
   app.commandLine.appendSwitch('enable-logging');
   app.commandLine.appendSwitch('v', '1');
 }
 
 // 配置网络服务
-app.on('ready', () => {
-  // 配置网络服务重启策略
-  app.configureHostResolver({
-    enableBuiltInResolver: true,
-    secureDnsMode: 'off'
+if (app) {
+  app.on('ready', () => {
+    // 配置网络服务重启策略
+    app.configureHostResolver({
+      enableBuiltInResolver: true,
+      secureDnsMode: 'off'
+    });
   });
-});
+}
 
 // 添加错误处理
 app.on('render-process-gone', (_event, webContents, details) => {
@@ -1195,8 +1204,8 @@ if (!gotTheLock) {
 
   ipcMain.handle('mcp:fetchMarketplace', async () => {
     const url = app.isPackaged
-      ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/mcp-marketplace'
-      : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/mcp-marketplace';
+      ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/clawork/prod/mcp-marketplace'
+      : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/clawork/test/mcp-marketplace';
     try {
       const https = await import('https');
       const data = await new Promise<string>((resolve, reject) => {
@@ -2670,11 +2679,14 @@ if (!gotTheLock) {
     await app.whenReady();
     console.log('[Main] initApp: app is ready');
 
+    // Now app is ready, we can safely configure user data path
+    configureUserDataPath();
+
     // Note: Calendar permission is checked on-demand when calendar operations are requested
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'lobsterai', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'clawork', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);

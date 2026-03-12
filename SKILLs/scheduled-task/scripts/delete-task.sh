@@ -1,11 +1,11 @@
 #!/bin/bash
-# Delete a scheduled task via LobsterAI internal API.
+# Delete a scheduled task via ClaudeWork internal API.
 # Usage: bash "$SKILLS_ROOT/scheduled-task/scripts/delete-task.sh" <task_id>
 #
 # Returns JSON response: { "success": true } or { "success": false, "error": "..." }
 #
-# Environment variables (set automatically by LobsterAI cowork session):
-#   LOBSTERAI_API_BASE_URL - Internal proxy URL (always points to local proxy)
+# Environment variables (set automatically by ClaudeWork cowork session):
+#   CLAUDEWORK_API_BASE_URL - Internal proxy URL (always points to local proxy)
 
 HTTP_NODE_CMD=""
 HTTP_NODE_ARGS=()
@@ -94,8 +94,8 @@ const [url] = process.argv.slice(2);
 NODE
 }
 
-if [ -z "$LOBSTERAI_API_BASE_URL" ]; then
-  echo '{"success":false,"error":"LOBSTERAI_API_BASE_URL not set. This script must run inside a LobsterAI cowork session."}'
+if [ -z "$CLAUDEWORK_API_BASE_URL" ]; then
+  echo '{"success":false,"error":"CLAUDEWORK_API_BASE_URL not set. This script must run inside a ClaudeWork cowork session."}'
   exit 1
 fi
 

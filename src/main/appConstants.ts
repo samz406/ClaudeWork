@@ -1,3 +1,3 @@
-export const APP_NAME = 'LobsterAI';
-export const APP_ID = 'lobsterai';
-export const DB_FILENAME = 'lobsterai.sqlite';
+export const APP_NAME = 'ClaudeWork';
+export const APP_ID = 'clawork';
+export const DB_FILENAME = 'clawork.sqlite';

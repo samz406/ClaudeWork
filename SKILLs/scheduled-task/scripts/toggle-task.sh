@@ -1,12 +1,12 @@
 #!/bin/bash
-# Enable or disable a scheduled task via LobsterAI internal API.
+# Enable or disable a scheduled task via ClaudeWork internal API.
 # Usage: bash "$SKILLS_ROOT/scheduled-task/scripts/toggle-task.sh" <task_id> <true|false>
 #
 # Returns JSON response: { "success": true, "task": { ... }, "warning": "..." } or { "success": false, "error": "..." }
 # Warning may be "TASK_AT_PAST" (one-time task datetime has passed) or "TASK_EXPIRED" (task has expired).
 #
-# Environment variables (set automatically by LobsterAI cowork session):
-#   LOBSTERAI_API_BASE_URL - Internal proxy URL (always points to local proxy)
+# Environment variables (set automatically by ClaudeWork cowork session):
+#   CLAUDEWORK_API_BASE_URL - Internal proxy URL (always points to local proxy)
 
 HTTP_NODE_CMD=""
 HTTP_NODE_ARGS=()
@@ -109,8 +109,8 @@ const [url, body] = process.argv.slice(2);
 NODE
 }
 
-if [ -z "$LOBSTERAI_API_BASE_URL" ]; then
-  echo '{"success":false,"error":"LOBSTERAI_API_BASE_URL not set. This script must run inside a LobsterAI cowork session."}'
+if [ -z "$CLAUDEWORK_API_BASE_URL" ]; then
+  echo '{"success":false,"error":"CLAUDEWORK_API_BASE_URL not set. This script must run inside a ClaudeWork cowork session."}'
   exit 1
 fi
 

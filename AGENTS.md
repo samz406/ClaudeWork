@@ -30,7 +30,7 @@ npm run dist:linux      # Linux (.AppImage)
 
 ## Architecture Overview
 
-LobsterAI is an Electron + React desktop application with two primary modes:
+ClaudeWork is an Electron + React desktop application with two primary modes:
 1. **Cowork Mode** - AI-assisted coding sessions using Claude Agent SDK with tool execution
 2. **Artifacts System** - Rich preview of code outputs (HTML, SVG, React, Mermaid)
 
