@@ -2233,6 +2233,59 @@ if (!gotTheLock) {
     }
   });
 
+  // Git operations
+  const validateGitCwd = (cwd: unknown): string => {
+    if (typeof cwd !== 'string' || !cwd) throw new Error('Invalid cwd');
+    return path.resolve(cwd);
+  };
+
+  ipcMain.handle('git:status', async (_event, cwd: string) => {
+    try {
+      const safeCwd = validateGitCwd(cwd);
+      const { execSync } = require('child_process');
+      const output = execSync('git status --porcelain', { cwd: safeCwd, encoding: 'utf-8', timeout: 5000 });
+      const files = output.trim().split('\n').filter(Boolean).map((line: string) => {
+        const status = line.substring(0, 2);
+        const filePath = line.substring(3);
+        return { status: status.trim(), path: filePath };
+      });
+      return { success: true, files };
+    } catch {
+      return { success: false, files: [] };
+    }
+  });
+
+  ipcMain.handle('git:branch', async (_event, cwd: string) => {
+    try {
+      const safeCwd = validateGitCwd(cwd);
+      const { execSync } = require('child_process');
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: safeCwd, encoding: 'utf-8', timeout: 5000 }).trim();
+      return { success: true, branch };
+    } catch {
+      return { success: false, branch: '' };
+    }
+  });
+
+  ipcMain.handle('git:log', async (_event, cwd: string, limit = 10) => {
+    try {
+      const safeCwd = validateGitCwd(cwd);
+      const { execSync } = require('child_process');
+      const safeLimit = Math.min(Math.max(1, parseInt(String(limit), 10) || 10), 50);
+      const output = execSync(
+        `git log --oneline -${safeLimit}`,
+        { cwd: safeCwd, encoding: 'utf-8', timeout: 5000 }
+      );
+      const commits = output.trim().split('\n').filter(Boolean).map((line: string) => {
+        const spaceIdx = line.indexOf(' ');
+        if (spaceIdx <= 0) return { hash: line, message: '' };
+        return { hash: line.substring(0, spaceIdx), message: line.substring(spaceIdx + 1) };
+      });
+      return { success: true, commits };
+    } catch {
+      return { success: false, commits: [] };
+    }
+  });
+
   // App update download & install
   ipcMain.handle('appUpdate:download', async (event, url: string) => {
     try {

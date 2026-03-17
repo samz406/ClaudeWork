@@ -242,6 +242,11 @@ contextBridge.exposeInMainWorld('electron', {
     readFile: (filePath: string) => ipcRenderer.invoke('fs:readFile', filePath),
     stat: (filePath: string) => ipcRenderer.invoke('fs:stat', filePath),
   },
+  git: {
+    status: (cwd: string) => ipcRenderer.invoke('git:status', cwd),
+    branch: (cwd: string) => ipcRenderer.invoke('git:branch', cwd),
+    log: (cwd: string, limit?: number) => ipcRenderer.invoke('git:log', cwd, limit),
+  },
   autoLaunch: {
     get: () => ipcRenderer.invoke('app:getAutoLaunch'),
     set: (enabled: boolean) => ipcRenderer.invoke('app:setAutoLaunch', enabled),
