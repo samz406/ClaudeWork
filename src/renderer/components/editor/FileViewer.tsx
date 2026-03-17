@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { XMarkIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import Editor from '@monaco-editor/react';
 
 interface FileViewerProps {
   filePath: string;
@@ -8,33 +9,114 @@ interface FileViewerProps {
 
 const LANGUAGE_MAP: Record<string, string> = {
   ts: 'typescript',
-  tsx: 'tsx',
+  tsx: 'typescript',
   js: 'javascript',
-  jsx: 'jsx',
+  jsx: 'javascript',
   json: 'json',
   md: 'markdown',
   css: 'css',
+  scss: 'scss',
+  less: 'less',
   html: 'html',
+  htm: 'html',
   py: 'python',
+  pyw: 'python',
   rs: 'rust',
   go: 'go',
-  sh: 'bash',
+  java: 'java',
+  c: 'c',
+  h: 'c',
+  cpp: 'cpp',
+  cxx: 'cpp',
+  cc: 'cpp',
+  hpp: 'cpp',
+  cs: 'csharp',
+  rb: 'ruby',
+  php: 'php',
+  swift: 'swift',
+  kt: 'kotlin',
+  kts: 'kotlin',
+  scala: 'scala',
+  sh: 'shell',
+  bash: 'shell',
+  zsh: 'shell',
+  fish: 'shell',
+  ps1: 'powershell',
   yml: 'yaml',
   yaml: 'yaml',
-  toml: 'toml',
+  toml: 'ini',
+  ini: 'ini',
+  cfg: 'ini',
   xml: 'xml',
+  svg: 'xml',
   sql: 'sql',
-  txt: 'text',
+  graphql: 'graphql',
+  gql: 'graphql',
+  r: 'r',
+  lua: 'lua',
+  perl: 'perl',
+  pl: 'perl',
+  dockerfile: 'dockerfile',
+  makefile: 'plaintext',
+  cmake: 'plaintext',
+  txt: 'plaintext',
+  log: 'plaintext',
+  env: 'plaintext',
+  gitignore: 'plaintext',
+  dockerignore: 'plaintext',
 };
+
+// Map special filenames (no extension) to languages
+const FILENAME_MAP: Record<string, string> = {
+  Dockerfile: 'dockerfile',
+  Makefile: 'plaintext',
+  CMakeLists: 'plaintext',
+  Vagrantfile: 'ruby',
+  Gemfile: 'ruby',
+  Rakefile: 'ruby',
+};
+
+function getLanguage(fileName: string): string {
+  // Check exact filename match first (e.g. "Dockerfile", "Makefile")
+  if (FILENAME_MAP[fileName]) return FILENAME_MAP[fileName];
+
+  const ext = fileName.includes('.')
+    ? fileName.split('.').pop()?.toLowerCase() || ''
+    : '';
+
+  // For extensionless files, check stem against special filenames
+  if (!ext && FILENAME_MAP[fileName]) return FILENAME_MAP[fileName];
+
+  return LANGUAGE_MAP[ext] || 'plaintext';
+}
+
+function useIsDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(
+    () => document.documentElement.classList.contains('dark')
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
 
 const FileViewer: React.FC<FileViewerProps> = ({ filePath, onClose }) => {
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isDark = useIsDarkMode();
 
   const fileName = filePath.split(/[/\\]/).pop() || filePath;
-  const ext = fileName.includes('.') ? fileName.split('.').pop()?.toLowerCase() || '' : '';
-  const language = LANGUAGE_MAP[ext] || 'text';
+  const language = getLanguage(fileName);
 
   useEffect(() => {
     setIsLoading(true);
@@ -53,6 +135,28 @@ const FileViewer: React.FC<FileViewerProps> = ({ filePath, onClose }) => {
       setIsLoading(false);
     });
   }, [filePath]);
+
+  const editorOptions = useMemo(() => ({
+    readOnly: true,
+    minimap: { enabled: false },
+    fontSize: 12,
+    lineNumbersMinChars: 3,
+    scrollBeyondLastLine: false,
+    wordWrap: 'on' as const,
+    wrappingIndent: 'indent' as const,
+    automaticLayout: true,
+    scrollbar: {
+      verticalScrollbarSize: 8,
+      horizontalScrollbarSize: 8,
+    },
+    overviewRulerLanes: 0,
+    hideCursorInOverviewRuler: true,
+    renderLineHighlight: 'none' as const,
+    contextmenu: false,
+    folding: true,
+    lineDecorationsWidth: 4,
+    padding: { top: 8, bottom: 8 },
+  }), []);
 
   return (
     <div className="flex flex-col h-full dark:bg-claude-darkBg bg-claude-bg">
@@ -76,7 +180,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ filePath, onClose }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto min-h-0">
+      <div className="flex-1 min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
@@ -86,18 +190,17 @@ const FileViewer: React.FC<FileViewerProps> = ({ filePath, onClose }) => {
             <p className="text-xs dark:text-claude-darkTextTertiary text-claude-textTertiary text-center">{error}</p>
           </div>
         ) : content !== null ? (
-          <pre className="p-3 text-xs leading-relaxed dark:text-claude-darkText text-claude-text font-mono whitespace-pre overflow-x-auto">
-            <code>
-              {content.split('\n').map((line, i) => (
-                <div key={i} className="flex">
-                  <span className="select-none w-10 pr-3 text-right dark:text-claude-darkTextTertiary text-claude-textTertiary shrink-0">
-                    {i + 1}
-                  </span>
-                  <span className="flex-1">{line || ' '}</span>
-                </div>
-              ))}
-            </code>
-          </pre>
+          <Editor
+            value={content}
+            language={language}
+            theme={isDark ? 'vs-dark' : 'light'}
+            options={editorOptions}
+            loading={
+              <div className="flex items-center justify-center h-full">
+                <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          />
         ) : null}
       </div>
     </div>
