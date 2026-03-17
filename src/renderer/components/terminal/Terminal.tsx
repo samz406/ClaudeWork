@@ -152,7 +152,6 @@ const Terminal = React.forwardRef<TerminalHandle, TerminalProps>(
         fitAddonRef.current = null;
       };
       // Only run on mount/unmount; theme changes handled separately
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Sync theme when dark mode changes
