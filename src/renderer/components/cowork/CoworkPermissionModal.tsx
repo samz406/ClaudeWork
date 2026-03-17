@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { CoworkPermissionRequest, CoworkPermissionResult } from '../../types/cowork';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { i18nService } from '../../services/i18n';
+import DiffViewer from '../editor/DiffViewer';
 
 interface CoworkPermissionModalProps {
   permission: CoworkPermissionRequest;
@@ -69,6 +70,9 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
   const isQuestionTool = questions.length > 0;
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [originalContent, setOriginalContent] = useState<string | null>(null);
+  const [isLoadingOriginal, setIsLoadingOriginal] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => {
     if (!isQuestionTool) {
@@ -89,6 +93,73 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
       setAnswers({});
     }
   }, [isQuestionTool, permission.requestId, toolInput]);
+
+  const fileModInfo = useMemo(() => {
+    const input = toolInput as Record<string, unknown>;
+    const filePath = (typeof input.file_path === 'string' ? input.file_path : null)
+      ?? (typeof input.path === 'string' ? input.path : null);
+
+    if (permission.toolName === 'Write' && filePath && typeof input.content === 'string') {
+      return { type: 'write' as const, filePath, newContent: input.content };
+    }
+
+    if (permission.toolName === 'Edit' && filePath) {
+      const oldString = (typeof input.old_string === 'string' ? input.old_string : null)
+        ?? (typeof input.old_str === 'string' ? input.old_str : null);
+      const newString = (typeof input.new_string === 'string' ? input.new_string : null)
+        ?? (typeof input.new_str === 'string' ? input.new_str : null);
+      if (oldString !== null && newString !== null) {
+        return { type: 'edit' as const, filePath, oldString, newString };
+      }
+    }
+
+    return null;
+  }, [permission.toolName, toolInput]);
+
+  useEffect(() => {
+    if (!fileModInfo) {
+      setOriginalContent(null);
+      setIsLoadingOriginal(false);
+      setShowRaw(false);
+      return;
+    }
+
+    setIsLoadingOriginal(true);
+    setOriginalContent(null);
+    setShowRaw(false);
+
+    window.electron.fs.readFile(fileModInfo.filePath)
+      .then((result: { success: boolean; content?: string; error?: string }) => {
+        if (result.success && result.content !== undefined) {
+          setOriginalContent(result.content);
+        } else {
+          setOriginalContent('');
+        }
+      })
+      .catch(() => {
+        setOriginalContent('');
+      })
+      .finally(() => {
+        setIsLoadingOriginal(false);
+      });
+  }, [fileModInfo]);
+
+  const diffContents = useMemo(() => {
+    if (!fileModInfo || originalContent === null) return null;
+
+    if (fileModInfo.type === 'write') {
+      return { original: originalContent, modified: fileModInfo.newContent };
+    }
+
+    // Edit: apply the replacement to the original content
+    const modified = originalContent.includes(fileModInfo.oldString)
+      ? originalContent.replace(fileModInfo.oldString, fileModInfo.newString)
+      : originalContent;
+    return { original: originalContent, modified };
+  }, [fileModInfo, originalContent]);
+
+  const showDiff = !!fileModInfo && !showRaw;
+  const modalMaxWidth = showDiff ? 'max-w-4xl' : 'max-w-lg';
 
   const formatToolInput = (input: Record<string, unknown>): string => {
     try {
@@ -187,7 +258,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
-      <div className="modal-content w-full max-w-lg mx-4 dark:bg-claude-darkSurface bg-claude-surface rounded-2xl shadow-modal overflow-hidden">
+      <div className={`modal-content w-full ${modalMaxWidth} mx-4 dark:bg-claude-darkSurface bg-claude-surface rounded-2xl shadow-modal overflow-hidden`}>
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b dark:border-claude-darkBorder border-claude-border">
           <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
@@ -259,29 +330,65 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
             </>
           ) : (
             <>
-              {/* Tool name */}
-              <div>
-                <label className="block text-xs font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary uppercase tracking-wider mb-1">
-                  {i18nService.t('coworkToolName')}
-                </label>
-                <div className="px-3 py-2 rounded-lg dark:bg-claude-darkBg bg-claude-bg">
-                  <code className="text-sm dark:text-claude-darkText text-claude-text">
-                    {permission.toolName}
-                  </code>
+              {/* Diff viewer for file write/edit operations */}
+              {fileModInfo && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary truncate" title={fileModInfo.filePath}>
+                    {fileModInfo.filePath}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowRaw((prev) => !prev)}
+                    className="text-xs px-2 py-1 rounded dark:text-claude-darkTextSecondary text-claude-textSecondary dark:hover:bg-claude-darkSurfaceHover hover:bg-claude-surfaceHover transition-colors shrink-0"
+                  >
+                    {showRaw ? 'Show Diff' : 'Show Raw'}
+                  </button>
                 </div>
-              </div>
+              )}
+
+              {fileModInfo && !showRaw && (
+                <div className="rounded-lg overflow-hidden border dark:border-claude-darkBorder border-claude-border h-64">
+                  {isLoadingOriginal ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : diffContents ? (
+                    <DiffViewer
+                      filePath={fileModInfo.filePath}
+                      originalContent={diffContents.original}
+                      modifiedContent={diffContents.modified}
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {/* Tool name */}
+              {(!fileModInfo || showRaw) && (
+                <div>
+                  <label className="block text-xs font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary uppercase tracking-wider mb-1">
+                    {i18nService.t('coworkToolName')}
+                  </label>
+                  <div className="px-3 py-2 rounded-lg dark:bg-claude-darkBg bg-claude-bg">
+                    <code className="text-sm dark:text-claude-darkText text-claude-text">
+                      {permission.toolName}
+                    </code>
+                  </div>
+                </div>
+              )}
 
               {/* Tool input */}
-              <div>
-                <label className="block text-xs font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary uppercase tracking-wider mb-1">
-                  {i18nService.t('coworkToolInput')}
-                </label>
-                <div className="px-3 py-2 rounded-lg dark:bg-claude-darkBg bg-claude-bg max-h-48 overflow-y-auto">
-                  <pre className="text-xs dark:text-claude-darkText text-claude-text whitespace-pre-wrap break-words font-mono">
-                    {formatToolInput(permission.toolInput)}
-                  </pre>
+              {(!fileModInfo || showRaw) && (
+                <div>
+                  <label className="block text-xs font-medium dark:text-claude-darkTextSecondary text-claude-textSecondary uppercase tracking-wider mb-1">
+                    {i18nService.t('coworkToolInput')}
+                  </label>
+                  <div className="px-3 py-2 rounded-lg dark:bg-claude-darkBg bg-claude-bg max-h-48 overflow-y-auto">
+                    <pre className="text-xs dark:text-claude-darkText text-claude-text whitespace-pre-wrap break-words font-mono">
+                      {formatToolInput(permission.toolInput)}
+                    </pre>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Warning for dangerous operations */}
               {isDangerousBash && (
