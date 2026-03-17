@@ -223,6 +223,9 @@ export interface AppConfig {
     newChat: string;
     search: string;
     settings: string;
+    commandPalette: string;
+    toggleTerminal: string;
+    toggleFileExplorer: string;
     [key: string]: string | undefined;
   };
 }
@@ -411,6 +414,9 @@ export const defaultConfig: AppConfig = {
     newChat: 'Ctrl+N',
     search: 'Ctrl+F',
     settings: 'Ctrl+,',
+    commandPalette: 'CmdOrCtrl+Shift+P',
+    toggleTerminal: 'CmdOrCtrl+`',
+    toggleFileExplorer: 'CmdOrCtrl+B',
   }
 };
 

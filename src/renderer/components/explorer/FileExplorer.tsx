@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import {
@@ -24,6 +24,16 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ rootPath, onFileSelect }) =
   const { tree, selectedFilePath, searchQuery } = useSelector(
     (state: RootState) => state.fileExplorer
   );
+  const [gitBranch, setGitBranch] = useState<string>('');
+
+  useEffect(() => {
+    if (!rootPath || !window.electron.git) return;
+    window.electron.git.branch(rootPath).then((result: { success: boolean; branch: string }) => {
+      if (result.success) {
+        setGitBranch(result.branch);
+      }
+    }).catch(() => {});
+  }, [rootPath]);
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<FileTreeNode[]> => {
     const result = await window.electron.fs.readDir(dirPath);
@@ -99,6 +109,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ rootPath, onFileSelect }) =
         <span className="text-xs font-semibold dark:text-claude-darkTextSecondary text-claude-textSecondary truncate block" title={rootPath}>
           {rootName}
         </span>
+        {gitBranch && (
+          <div className="mt-1 flex items-center gap-1.5 text-xs dark:text-claude-darkTextTertiary text-claude-textTertiary">
+            <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zm-2.25.75a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.492 2.492 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zM3.5 3.25a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0z" /></svg>
+            <span className="truncate">{gitBranch}</span>
+          </div>
+        )}
       </div>
 
       {/* Search */}

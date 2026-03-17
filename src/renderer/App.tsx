@@ -32,6 +32,8 @@ import { i18nService } from './services/i18n';
 import { matchesShortcut } from './services/shortcuts';
 import AppUpdateBadge from './components/update/AppUpdateBadge';
 import AppUpdateModal from './components/update/AppUpdateModal';
+import CommandPalette, { CommandItem } from './components/CommandPalette';
+import Terminal, { TerminalHandle } from './components/terminal/Terminal';
 
 const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -57,6 +59,9 @@ const App: React.FC = () => {
   const workingDirectory = useSelector((state: RootState) => state.cowork.config.workingDirectory);
   const [isFileExplorerVisible, setIsFileExplorerVisible] = useState(true);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isTerminalVisible, setIsTerminalVisible] = useState(false);
+  const terminalRef = useRef<TerminalHandle>(null);
   const pendingPermission = pendingPermissions[0] ?? null;
   const isWindows = window.electron.platform === 'win32';
 
@@ -254,6 +259,14 @@ const App: React.FC = () => {
     setIsFileExplorerVisible(prev => !prev);
   }, []);
 
+  const handleToggleTerminal = useCallback(() => {
+    setIsTerminalVisible(prev => !prev);
+  }, []);
+
+  const handleToggleCommandPalette = useCallback(() => {
+    setIsCommandPaletteOpen(prev => !prev);
+  }, []);
+
   const handleFileSelect = useCallback((filePath: string) => {
     setSelectedFilePath(filePath);
   }, []);
@@ -430,6 +443,22 @@ const App: React.FC = () => {
     }
   };
 
+  const commandPaletteCommands = useMemo<CommandItem[]>(() => {
+    const isMac = window.electron.platform === 'darwin';
+    const mod = isMac ? '⌘' : 'Ctrl';
+    return [
+      { id: 'new-chat', label: i18nService.t('newChat') || 'New Chat', shortcut: `${mod}+N`, category: 'General', handler: handleNewChat },
+      { id: 'settings', label: i18nService.t('settings') || 'Settings', shortcut: `${mod}+,`, category: 'General', handler: () => handleShowSettings() },
+      { id: 'toggle-sidebar', label: i18nService.t('toggleSidebar') || 'Toggle Sidebar', category: 'View', handler: handleToggleSidebar },
+      { id: 'toggle-file-explorer', label: i18nService.t('toggleFileExplorer') || 'Toggle File Explorer', shortcut: `${mod}+B`, category: 'View', handler: handleToggleFileExplorer },
+      { id: 'toggle-terminal', label: i18nService.t('toggleTerminal') || 'Toggle Terminal', shortcut: `${mod}+\``, category: 'View', handler: handleToggleTerminal },
+      { id: 'go-cowork', label: i18nService.t('cowork') || 'Go to Cowork', category: 'Navigation', handler: handleShowCowork },
+      { id: 'go-skills', label: i18nService.t('skills') || 'Go to Skills', category: 'Navigation', handler: handleShowSkills },
+      { id: 'go-mcp', label: 'Go to MCP', category: 'Navigation', handler: handleShowMcp },
+      { id: 'go-scheduled-tasks', label: i18nService.t('scheduledTasks') || 'Go to Scheduled Tasks', category: 'Navigation', handler: handleShowScheduledTasks },
+    ];
+  }, [handleNewChat, handleShowSettings, handleToggleSidebar, handleToggleFileExplorer, handleToggleTerminal, handleShowCowork, handleShowSkills, handleShowMcp, handleShowScheduledTasks]);
+
   const isShortcutInputActive = () => {
     const activeElement = document.activeElement;
     if (!(activeElement instanceof HTMLElement)) return false;
@@ -445,6 +474,24 @@ const App: React.FC = () => {
         ...defaultConfig.shortcuts,
         ...(shortcuts ?? {}),
       };
+
+      if (matchesShortcut(event, activeShortcuts.commandPalette)) {
+        event.preventDefault();
+        handleToggleCommandPalette();
+        return;
+      }
+
+      if (matchesShortcut(event, activeShortcuts.toggleTerminal)) {
+        event.preventDefault();
+        handleToggleTerminal();
+        return;
+      }
+
+      if (matchesShortcut(event, activeShortcuts.toggleFileExplorer)) {
+        event.preventDefault();
+        handleToggleFileExplorer();
+        return;
+      }
 
       if (matchesShortcut(event, activeShortcuts.newChat)) {
         event.preventDefault();
@@ -466,7 +513,7 @@ const App: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleShowSettings, handleNewChat]);
+  }, [handleShowSettings, handleNewChat, handleToggleCommandPalette, handleToggleTerminal, handleToggleFileExplorer]);
 
   useEffect(() => {
     return () => {
@@ -696,18 +743,32 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                {/* Main Cowork Area */}
-                <div className="flex-1 min-w-0">
-                  <CoworkView
-                    onRequestAppSettings={handleShowSettings}
-                    onShowSkills={handleShowSkills}
-                    isSidebarCollapsed={isSidebarCollapsed}
-                    onToggleSidebar={handleToggleSidebar}
-                    onNewChat={handleNewChat}
-                    updateBadge={isSidebarCollapsed ? updateBadge : null}
-                    onToggleFileExplorer={handleToggleFileExplorer}
-                    isFileExplorerVisible={isFileExplorerVisible}
-                  />
+                {/* Center content: Cowork + Terminal */}
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Main Cowork Area */}
+                  <div className="flex-1 min-h-0">
+                    <CoworkView
+                      onRequestAppSettings={handleShowSettings}
+                      onShowSkills={handleShowSkills}
+                      isSidebarCollapsed={isSidebarCollapsed}
+                      onToggleSidebar={handleToggleSidebar}
+                      onNewChat={handleNewChat}
+                      updateBadge={isSidebarCollapsed ? updateBadge : null}
+                      onToggleFileExplorer={handleToggleFileExplorer}
+                      isFileExplorerVisible={isFileExplorerVisible}
+                    />
+                  </div>
+
+                  {/* Terminal Panel */}
+                  {isTerminalVisible && (
+                    <div className="h-60 shrink-0 border-t dark:border-claude-darkBorder border-claude-border">
+                      <Terminal
+                        ref={terminalRef}
+                        title="Terminal"
+                        onClose={handleToggleTerminal}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* File Viewer Panel */}
@@ -751,6 +812,11 @@ const App: React.FC = () => {
         />
       )}
       {permissionModal}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={commandPaletteCommands}
+      />
     </div>
   );
 };

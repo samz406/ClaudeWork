@@ -357,6 +357,11 @@ interface IElectronAPI {
     readFile: (filePath: string) => Promise<{ success: boolean; content?: string; size?: number; error?: string }>;
     stat: (filePath: string) => Promise<{ success: boolean; stats?: { size: number; isDirectory: boolean; isFile: boolean; modifiedAt: number; createdAt: number }; error?: string }>;
   };
+  git: {
+    status: (cwd: string) => Promise<{ success: boolean; files: Array<{ status: string; path: string }> }>;
+    branch: (cwd: string) => Promise<{ success: boolean; branch: string }>;
+    log: (cwd: string, limit?: number) => Promise<{ success: boolean; commits: Array<{ hash: string; message: string }> }>;
+  };
   autoLaunch: {
     get: () => Promise<{ enabled: boolean }>;
     set: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { XMarkIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-import Editor from '@monaco-editor/react';
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { DiffEditor } from '@monaco-editor/react';
 
-interface FileViewerProps {
+interface DiffViewerProps {
   filePath: string;
-  onClose: () => void;
+  originalContent: string;
+  modifiedContent: string;
+  language?: string;
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
@@ -66,7 +68,6 @@ const LANGUAGE_MAP: Record<string, string> = {
   dockerignore: 'plaintext',
 };
 
-// Map special filenames (no extension) to languages
 const FILENAME_MAP: Record<string, string> = {
   Dockerfile: 'dockerfile',
   Makefile: 'plaintext',
@@ -77,14 +78,12 @@ const FILENAME_MAP: Record<string, string> = {
 };
 
 function getLanguage(fileName: string): string {
-  // Check exact filename match first (e.g. "Dockerfile", "Makefile")
   if (FILENAME_MAP[fileName]) return FILENAME_MAP[fileName];
 
   const ext = fileName.includes('.')
     ? fileName.split('.').pop()?.toLowerCase() || ''
     : '';
 
-  // For extensionless files, check stem against special filenames
   if (!ext && FILENAME_MAP[fileName]) return FILENAME_MAP[fileName];
 
   return LANGUAGE_MAP[ext] || 'plaintext';
@@ -109,102 +108,73 @@ function useIsDarkMode(): boolean {
   return isDark;
 }
 
-const FileViewer: React.FC<FileViewerProps> = ({ filePath, onClose }) => {
-  const [content, setContent] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const DiffViewer: React.FC<DiffViewerProps> = ({
+  filePath,
+  originalContent,
+  modifiedContent,
+  language,
+}) => {
   const isDark = useIsDarkMode();
 
   const fileName = filePath.split(/[/\\]/).pop() || filePath;
-  const language = getLanguage(fileName);
-
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    setContent(null);
-
-    window.electron.fs.readFile(filePath).then((result) => {
-      if (result.success && result.content !== undefined) {
-        setContent(result.content);
-      } else {
-        setError(result.error || 'Failed to read file');
-      }
-      setIsLoading(false);
-    }).catch((err) => {
-      setError(err instanceof Error ? err.message : 'Failed to read file');
-      setIsLoading(false);
-    });
-  }, [filePath]);
+  const resolvedLanguage = language || getLanguage(fileName);
 
   const editorOptions = useMemo(() => ({
     readOnly: true,
+    originalEditable: false,
     minimap: { enabled: false },
     fontSize: 12,
     lineNumbersMinChars: 3,
     scrollBeyondLastLine: false,
-    wordWrap: 'on' as const,
-    wrappingIndent: 'indent' as const,
     automaticLayout: true,
     scrollbar: {
-      verticalScrollbarSize: 8,
-      horizontalScrollbarSize: 8,
+      verticalScrollbarSize: 6,
+      horizontalScrollbarSize: 6,
     },
     overviewRulerLanes: 0,
-    hideCursorInOverviewRuler: true,
     renderLineHighlight: 'none' as const,
     contextmenu: false,
     folding: true,
     lineDecorationsWidth: 4,
     padding: { top: 8, bottom: 8 },
+    renderSideBySide: true,
   }), []);
 
   return (
     <div className="flex flex-col h-full dark:bg-claude-darkBg bg-claude-bg">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b dark:border-claude-darkBorder border-claude-border shrink-0">
+      <div className="flex items-center px-3 py-2 border-b dark:border-claude-darkBorder border-claude-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <DocumentTextIcon className="w-4 h-4 shrink-0 dark:text-claude-darkTextSecondary text-claude-textSecondary" />
-          <span className="text-xs font-medium dark:text-claude-darkText text-claude-text truncate" title={filePath}>
-            {fileName}
+          <span
+            className="text-xs font-medium dark:text-claude-darkText text-claude-text truncate"
+            title={filePath}
+          >
+            {filePath}
           </span>
           <span className="text-xs dark:text-claude-darkTextTertiary text-claude-textTertiary shrink-0">
-            {language}
+            {resolvedLanguage}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-md hover:bg-claude-surfaceHover dark:hover:bg-claude-darkSurfaceHover transition-colors"
-        >
-          <XMarkIcon className="w-4 h-4 dark:text-claude-darkTextSecondary text-claude-textSecondary" />
-        </button>
       </div>
 
-      {/* Content */}
+      {/* Diff content */}
       <div className="flex-1 min-h-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full px-4">
-            <p className="text-xs dark:text-claude-darkTextTertiary text-claude-textTertiary text-center">{error}</p>
-          </div>
-        ) : content !== null ? (
-          <Editor
-            value={content}
-            language={language}
-            theme={isDark ? 'vs-dark' : 'light'}
-            options={editorOptions}
-            loading={
-              <div className="flex items-center justify-center h-full">
-                <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-          />
-        ) : null}
+        <DiffEditor
+          original={originalContent}
+          modified={modifiedContent}
+          language={resolvedLanguage}
+          theme={isDark ? 'vs-dark' : 'light'}
+          options={editorOptions}
+          loading={
+            <div className="flex items-center justify-center h-full">
+              <div className="w-5 h-5 border-2 border-claude-accent border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+        />
       </div>
     </div>
   );
 };
 
-export default FileViewer;
+export default DiffViewer;
