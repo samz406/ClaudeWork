@@ -1,11 +1,11 @@
-# ClaudeWork — All-in-One Personal Assistant Agent
+# ClaudeWork — AI-Powered Programming Assistant
 
 <p align="center">
   <img src="public/logo.png" alt="ClaudeWork" width="120">
 </p>
 
 <p align="center">
-  <strong>A 24/7 personal assistant Agent that gets things done, built by NetEase Youdao</strong>
+  <strong>Your AI pair programmer — chat, code, run, and ship, all from one desktop app</strong>
 </p>
 
 <p align="center">
@@ -23,22 +23,45 @@
 
 ---
 
-**ClaudeWork** is an all-in-one personal assistant Agent developed by [NetEase Youdao](https://www.youdao.com/). It works around the clock to handle your everyday tasks — data analysis, making presentations, generating videos, writing documents, searching the web, sending emails, scheduling tasks, and more.
+**ClaudeWork** is an AI-powered programming assistant built on the Claude Agent SDK. It provides an IDE-like environment — file explorer, code viewer, and embedded terminal — powered by an AI agent that can read files, write code, run commands, and explain results, all under your supervision.
 
-At its core is **Cowork mode** — it executes tools, manipulates files, and runs commands in a local or sandboxed environment, all under your supervision. You can also chat with agent via Telegram, Discord, DingTalk or Feishu (Lark) and get work done from your phone anytime, anywhere.
+At its core is **Cowork mode**: an AI working session where the agent can autonomously browse your project, edit source files, execute shell commands, run tests, search the web, and generate documents — pausing at every sensitive step to ask for your approval. The result is a coding workflow where you focus on what to build while the AI handles how.
+
+Beyond coding, ClaudeWork ships with 20+ built-in skills (Office documents, video generation, web automation, email, and more) and can be triggered remotely from your phone via Telegram, Discord, DingTalk, or Feishu.
 
 ## Key Features
 
-- **All-in-One Productivity Assistant** — Data analysis, PPT creation, video generation, document writing, web search, email — covers the full range of daily work
-- **Local + Sandbox Execution** — Run tasks directly on your machine or in an isolated Alpine Linux sandbox
-- **Built-in Skills** — Office document generation, web search, Playwright automation, Remotion video generation, and more
-- **Windows Built-in Python Runtime** — Windows packages bundle a ready-to-use Python interpreter runtime; Python skill dependencies can be installed on demand
-- **Scheduled Tasks** — Create recurring tasks via conversation or the GUI — daily news digests, inbox cleanup, periodic report generation, and more
-- **Persistent Memory** — Automatically extracts user preferences and personal facts from conversations, remembers your habits across sessions, and gets smarter the more you use it
-- **Mobile via IM** — Control your Agent remotely from your phone through Telegram, Discord, DingTalk, or Feishu
-- **Permission Gating** — All tool invocations require explicit user approval before execution
-- **Cross-Platform** — macOS (Intel + Apple Silicon), Windows, Linux desktop, plus mobile coverage via IM
-- **Local Data** — SQLite storage keeps your chat history and configuration on your device
+### 🖥️ IDE-Like Workspace
+- **File Explorer** — Browse, search, and open files in your project with git branch awareness
+- **Code Viewer** — Monaco Editor (the engine powering VS Code) with syntax highlighting for 30+ languages
+- **Diff Viewer** — Side-by-side code diff for reviewing AI-generated changes before applying them
+- **Embedded Terminal** — Full xterm.js terminal to run commands, tests, and scripts without leaving the app
+- **Command Palette** — Quick keyboard-driven access to all features (`Cmd/Ctrl+Shift+P`)
+
+### 🤖 AI Agent (Cowork Mode)
+- **Conversational Coding** — Describe what you want in plain language; the agent reads your codebase and generates complete, context-aware solutions
+- **Tool Execution** — The agent can run shell commands, edit files, call APIs, and chain multiple steps autonomously
+- **Permission Gating** — Every file write, terminal command, and network call requires your explicit approval before execution
+- **Streaming Results** — Watch the agent think and act in real time with live output streaming
+- **Persistent Memory** — Automatically remembers your preferences, coding style, and project details across sessions
+
+### ⚡ Execution Modes
+- **Local Execution** — Run tasks directly on your machine at full speed
+- **Sandbox Execution** — Isolated Alpine Linux VM for safe experimentation without touching your system
+
+### 🛠️ Built-in Skills (20+)
+- **Code & Automation** — Web automation (Playwright), web game development, frontend UI design, web search
+- **Documents** — Word (docx), Excel (xlsx), PowerPoint (pptx), PDF processing
+- **Creative** — AI video generation (Remotion / Seedance), AI image generation (Seedream), canvas design
+- **Productivity** — Scheduled tasks, email (IMAP/SMTP), weather, news search, plan authoring
+
+### 📱 Mobile Remote Control
+- Control your desktop agent from your phone via **Telegram**, **Discord**, **DingTalk**, **Feishu**, or **NetEase IM**
+
+### 🔒 Security & Privacy
+- **Local Data** — All chat history and config stored in a local SQLite database, never uploaded
+- **Workspace Boundaries** — File operations are scoped to your designated working directory
+- **Process Isolation** — Electron context isolation enabled, node integration disabled
 
 ## How It Works
 
@@ -179,7 +202,7 @@ SKILLs/                              # Skill definitions
 
 ## Cowork System
 
-Cowork is the core feature of ClaudeWork — an AI working session system built on the Claude Agent SDK. Designed for productivity scenarios, it can autonomously complete complex tasks like data analysis, document generation, and information retrieval.
+Cowork is the core feature of ClaudeWork — an AI coding session built on the Claude Agent SDK. The agent understands your project structure, reads and writes source files, runs shell commands and tests, and streams every step back to you in real time.
 
 ### Execution Modes
 
@@ -353,6 +376,48 @@ Cowork session config includes:
 ### Internationalization
 
 Currently English and Chinese are supported. Switch languages in the Settings panel.
+
+## Roadmap
+
+ClaudeWork is evolving into a full-featured AI-native programming tool. Here is what is planned:
+
+### 🔧 Deeper Code Intelligence
+- **Inline AI Edits** — Select any code block and ask the AI to refactor, explain, or fix it in place
+- **Multi-file Editing** — Let the agent plan and apply coordinated changes across many files in one session
+- **Code Navigation** — Go-to-definition, find-all-references, and symbol search powered by Language Server Protocol (LSP)
+- **Intelligent Autocomplete** — AI-assisted completions inline in the editor, similar to GitHub Copilot
+
+### 🗂️ Git & Version Control
+- **Commit Workflow** — Stage, commit, push, and pull changes directly from the UI
+- **Merge Conflict Resolution** — AI-assisted three-way merge with explanations
+- **Blame & History** — Line-by-line blame view and visual commit history timeline
+- **PR Review Assistance** — Summarize pull requests, highlight risky changes, and suggest review comments
+
+### 🧪 Testing & Quality
+- **Test Runner Integration** — Run and display test results (Jest, pytest, Go test, etc.) inline next to the code
+- **Coverage Visualization** — Highlight covered and uncovered lines in the editor
+- **AI-Generated Tests** — Ask the agent to write unit tests for any function or module
+- **Linter & Formatter** — Run ESLint, Prettier, Black, or other formatters on demand or automatically
+
+### 🐛 Debugging
+- **Integrated Debugger** — Set breakpoints, step through code, and inspect variables without leaving the app
+- **AI-Assisted Error Diagnosis** — Paste a stack trace; the agent pinpoints the root cause and suggests a fix
+
+### 🌐 Cloud & Team Collaboration
+- **GitHub / GitLab Integration** — Browse issues and PRs, create branches, and push directly from the chat interface
+- **Cloud Sync** — Optional encrypted sync of sessions and memories across devices
+- **Team Workspaces** — Share sessions, prompts, and skill configurations with teammates
+
+### 🔌 Extensibility
+- **MCP (Model Context Protocol) Support** — Connect to any MCP-compatible server to extend agent capabilities
+- **Plugin SDK** — Build and distribute custom skills with a documented API and marketplace
+- **Custom AI Models** — Plug in any OpenAI-compatible or local model (Ollama, LM Studio) as the AI backend
+
+### ☁️ Cloud-Native Execution
+- **Remote Sandbox** — Execute heavy tasks in a cloud VM to keep your local machine free
+- **CI/CD Pipeline Visualization** — Watch pipeline runs in real time and let the agent diagnose failures
+
+---
 
 ## Development Guidelines
 
